@@ -3,42 +3,67 @@ name: Security
 on:
   pull_request:
   push:
-    branches: [main]
+    branches:
+      - main
   schedule:
     - cron: "23 3 * * 1"
   workflow_dispatch:
+    inputs:
+      scan_scope:
+        description: "Select security scan scope"
+        required: true
+        type: choice
+        default: all
+        options:
+          - all
+          - dependencies
+          - secrets
 
+# Least privilege by default
 permissions:
   contents: read
+
+# Avoid duplicate runs for the same PR or branch.
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   dependency-scan:
     name: Dependency Vulnerability Scan
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 15
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      inputs.scan_scope == 'all' ||
+      inputs.scan_scope == 'dependencies'
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Scan dependencies with OSV-Scanner
+      - name: Scan Dart and Flutter dependencies
         uses: google/osv-scanner-action/osv-scanner-action@v2.6.0
         with:
           scan-args: |-
             --lockfile=pubspec.lock
 
   secret-scan:
-    name: Git Secret Scan
+    name: Secret Detection
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 15
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      inputs.scan_scope == 'all' ||
+      inputs.scan_scope == 'secrets'
+
     steps:
       - name: Checkout full Git history
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Scan for leaked secrets
+      - name: Scan repository for leaked secrets
         uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
