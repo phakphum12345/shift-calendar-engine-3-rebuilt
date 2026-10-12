@@ -19,11 +19,9 @@ on:
           - dependencies
           - secrets
 
-# Least privilege by default
 permissions:
   contents: read
 
-# Avoid duplicate runs for the same PR or branch.
 concurrency:
   group: security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -37,16 +35,39 @@ jobs:
       github.event_name != 'workflow_dispatch' ||
       inputs.scan_scope == 'all' ||
       inputs.scan_scope == 'dependencies'
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Set up Node.js LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+
+      - name: Install Node.js dependencies when a lockfile exists
+        shell: bash
+        run: |
+          if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
+            npm ci
+          else
+            echo "No npm lockfile found; skipping npm installation."
+          fi
+
       - name: Scan Dart and Flutter dependencies
+        if: hashFiles('pubspec.lock') != ''
         uses: google/osv-scanner-action/osv-scanner-action@v2.6.0
         with:
           scan-args: |-
             --lockfile=pubspec.lock
+
+      - name: Audit npm dependencies when a lockfile exists
+        shell: bash
+        run: |
+          if [[ -f package-lock.json || -f npm-shrinkwrap.json ]]; then
+            npm audit --audit-level=high
+          else
+            echo "No npm lockfile found; skipping npm audit."
+          fi
 
   secret-scan:
     name: Secret Detection
@@ -56,7 +77,6 @@ jobs:
       github.event_name != 'workflow_dispatch' ||
       inputs.scan_scope == 'all' ||
       inputs.scan_scope == 'secrets'
-
     steps:
       - name: Checkout full Git history
         uses: actions/checkout@v6
