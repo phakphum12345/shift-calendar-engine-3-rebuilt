@@ -13,10 +13,7 @@ import 'google_login_button.dart';
 /// It does not offer local-file attachment or upload, so personal files are not
 /// included in the GitHub code merge workflow.
 class GoogleSheetImportPage extends StatelessWidget {
-  const GoogleSheetImportPage({
-    required this.controller,
-    super.key,
-  });
+  const GoogleSheetImportPage({required this.controller, super.key});
 
   final DriveRosterSourceController controller;
 
@@ -92,8 +89,7 @@ class GoogleSheetImportPage extends StatelessWidget {
               ),
           const SizedBox(height: 16),
           FilledButton.icon(
-            onPressed:
-                controller.selectedSource == null || controller.loading
+            onPressed: controller.selectedSource == null || controller.loading
                 ? null
                 : () => _importSelected(context),
             icon: const Icon(Icons.download_outlined),
