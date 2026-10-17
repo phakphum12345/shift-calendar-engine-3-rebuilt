@@ -78,36 +78,34 @@ class GoogleSheetImportPage extends StatelessWidget {
           const SizedBox(height: 8),
           if (controller.recentSources.isEmpty)
             Text(context.l10n.noDriveRosterFiles)
+          
           else
-            for (final source in controller.recentSources)
-              RadioListTile<String>(
-                value: source.id,
-                groupValue: controller.selectedSource?.id,
-                onChanged: controller.loading
-                    ? null
-                    : (_) => controller.select(source),
-                title: Text(source.name),
-                subtitle: Text(_sourceDetails(context, source)),
-                secondary: const Icon(Icons.table_chart_outlined),
+            RadioGroup<String>(
+              groupValue: controller.selectedSource?.id,
+              onChanged: controller.loading
+                  ? null
+                  : (value) {
+                      if (value == null) return;
+                      for (final source in controller.recentSources) {
+                        if (source.id == value) {
+                          controller.select(source);
+                          break;
+                        }
+                      }
+                    },
+              child: Column(
+                children: [
+                  for (final source in controller.recentSources)
+                    RadioListTile<String>(
+                      value: source.id,
+                      title: Text(source.name),
+                      subtitle: Text(_sourceDetails(context, source)),
+                      secondary: const Icon(Icons.table_chart_outlined),
+                    ),
+                ],
               ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed:
-                controller.selectedSource == null || controller.loading
-                ? null
-                : () => _importSelected(context),
-            icon: const Icon(Icons.download_outlined),
-            label: Text(context.l10n.loadCurrentSource),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'นำเข้าเฉพาะ Google Sheets ที่เลือกเท่านั้น ไม่แนบหรืออัปโหลดไฟล์ส่วนตัวเข้า GitHub',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
-      ),
-    ),
+            ),
+
   );
 
   String _sourceDetails(BuildContext context, DriveRosterSource source) {
