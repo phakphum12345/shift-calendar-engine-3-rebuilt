@@ -1,0 +1,109 @@
+name: Cross-Repo Integration
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cross-repo-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shift-calendar-engine:
+    name: Shift Calendar Engine · test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout workflow repository at tested ref
+        uses: actions/checkout@v6
+      - name: Record source revision
+        shell: bash
+        run: |
+          echo "### shift-calendar-engine-3-rebuilt" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Repository: `${GITHUB_REPOSITORY}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: `${GITHUB_SHA}`" >> "$GITHUB_STEP_SUMMARY"
+          git rev-parse HEAD
+      - name: Set up Java for Android build
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Generate localizations
+        run: flutter gen-l10n
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test
+      - name: Build Web
+        run: flutter build web --release
+      - name: Build Android APK
+        run: flutter build apk --release
+
+  phakphum-calendar:
+    name: Phakphum Calendar · test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Phakphum Calendar main
+        uses: actions/checkout@v6
+        with:
+          repository: phakphum12345/phakphum-calendar
+          ref: main
+          path: phakphum-calendar
+      - name: Record source revision
+        working-directory: phakphum-calendar
+        shell: bash
+        run: |
+          echo "### phakphum-calendar" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Repository: `phakphum12345/phakphum-calendar`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch: `main`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: `$(git rev-parse HEAD)`" >> "$GITHUB_STEP_SUMMARY"
+          git rev-parse HEAD
+      - name: Set up Java for Android build
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        working-directory: phakphum-calendar
+        run: flutter pub get
+      - name: Generate localizations
+        working-directory: phakphum-calendar
+        run: flutter gen-l10n
+      - name: Check formatting
+        working-directory: phakphum-calendar
+        run: dart format --set-exit-if-changed .
+      - name: Analyze
+        working-directory: phakphum-calendar
+        run: flutter analyze
+      - name: Test
+        working-directory: phakphum-calendar
+        run: flutter test
+      - name: Build Web
+        working-directory: phakphum-calendar
+        run: flutter build web --release
+      - name: Build Android APK
+        working-directory: phakphum-calendar
+        run: flutter build apk --release
