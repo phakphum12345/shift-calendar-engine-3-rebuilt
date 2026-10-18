@@ -13,126 +13,114 @@ import 'google_login_button.dart';
 /// It does not offer local-file attachment or upload, so personal files are not
 /// included in the GitHub code merge workflow.
 class GoogleSheetImportPage extends StatelessWidget {
-  const GoogleSheetImportPage({
-    required this.controller,
-    super.key,
-  });
+  const GoogleSheetImportPage({required this.controller, super.key});
 
   final DriveRosterSourceController controller;
 
   @override
   Widget build(BuildContext context) => SafeArea(
-        child: ListenableBuilder(
-          listenable: Listenable.merge([controller, controller.auth]),
-          builder: (context, _) => ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Text(
-                'Google Sheets Import',
-                style: Theme.of(context).textTheme.headlineMedium,
+    child: ListenableBuilder(
+      listenable: Listenable.merge([controller, controller.auth]),
+      builder: (context, _) => ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text(
+            'Google Sheets Import',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 16),
+          _Header(controller: controller),
+          if (controller.loading) ...[
+            const SizedBox(height: 16),
+            const LinearProgressIndicator(),
+          ],
+          if (controller.errorCode != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              controller.errorCode == 'google_drive_not_configured'
+                  ? context.l10n.googleDriveNotConfigured
+                  : context.l10n.googleDriveLoadFailed,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+          const SizedBox(height: 20),
+          Text(
+            context.l10n.sheetReadMode,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<SheetReadMode>(
+            segments: [
+              ButtonSegment(
+                value: SheetReadMode.configured,
+                icon: const Icon(Icons.tune),
+                label: Text(context.l10n.configuredSheetRead),
               ),
-              const SizedBox(height: 16),
-              _Header(controller: controller),
-              if (controller.loading) ...[
-                const SizedBox(height: 16),
-                const LinearProgressIndicator(),
-              ],
-              if (controller.errorCode != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  controller.errorCode == 'google_drive_not_configured'
-                      ? context.l10n.googleDriveNotConfigured
-                      : context.l10n.googleDriveLoadFailed,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              Text(
-                context.l10n.sheetReadMode,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<SheetReadMode>(
-                segments: [
-                  ButtonSegment(
-                    value: SheetReadMode.configured,
-                    icon: const Icon(Icons.tune),
-                    label: Text(context.l10n.configuredSheetRead),
-                  ),
-                  ButtonSegment(
-                    value: SheetReadMode.standard,
-                    icon: const Icon(Icons.table_view_outlined),
-                    label: Text(context.l10n.standardSheetRead),
-                  ),
-                ],
-                selected: {controller.readMode},
-                onSelectionChanged: controller.loading
-                    ? null
-                    : (selection) =>
-                        controller.selectReadMode(selection.single),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                context.l10n.recentlyModified,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              if (controller.recentSources.isEmpty)
-                Text(context.l10n.noDriveRosterFiles)
-              else
-                RadioGroup<String>(
-                  groupValue: controller.selectedSource?.id,
-                  onChanged: (value) {
-                    if (controller.loading || value == null) return;
-
-                    for (final source in controller.recentSources) {
-                      if (source.id == value) {
-                        controller.select(source);
-                        break;
-                      }
-                    }
-                  },
-                  child: Column(
-                    children: [
-                      for (final source in controller.recentSources)
-                        RadioListTile<String>(
-                          value: source.id,
-                          title: Text(source.name),
-                          subtitle: Text(_sourceDetails(context, source)),
-                          secondary: const Icon(
-                            Icons.table_chart_outlined,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: controller.selectedSource == null ||
-                        controller.loading
-                    ? null
-                    : () => _importSelected(context),
-                icon: const Icon(Icons.download_outlined),
-                label: Text(context.l10n.loadCurrentSource),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'การนำเข้าจะอ่านเฉพาะ Google Sheets ที่เลือก '
-                'ไม่มีการแนบหรืออัปโหลดไฟล์ส่วนตัวเข้าสู่ GitHub',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
+              ButtonSegment(
+                value: SheetReadMode.standard,
+                icon: const Icon(Icons.table_view_outlined),
+                label: Text(context.l10n.standardSheetRead),
               ),
             ],
+            selected: {controller.readMode},
+            onSelectionChanged: controller.loading
+                ? null
+                : (selection) => controller.selectReadMode(selection.single),
           ),
-        ),
-      );
+          const SizedBox(height: 20),
+          Text(
+            context.l10n.recentlyModified,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          if (controller.recentSources.isEmpty)
+            Text(context.l10n.noDriveRosterFiles)
+          else
+            RadioGroup<String>(
+              groupValue: controller.selectedSource?.id,
+              onChanged: (String? value) {
+                if (controller.loading || value == null) return;
 
-  String _sourceDetails(
-    BuildContext context,
-    DriveRosterSource source,
-  ) {
+                for (final source in controller.recentSources) {
+                  if (source.id == value) {
+                    controller.select(source);
+                    break;
+                  }
+                }
+              },
+              child: Column(
+                children: [
+                  for (final source in controller.recentSources)
+                    RadioListTile<String>(
+                      value: source.id,
+                      title: Text(source.name),
+                      subtitle: Text(_sourceDetails(context, source)),
+                      secondary: const Icon(Icons.table_chart_outlined),
+                    ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: controller.selectedSource == null || controller.loading
+                ? null
+                : () => _importSelected(context),
+            icon: const Icon(Icons.download_outlined),
+            label: Text(context.l10n.loadCurrentSource),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'การนำเข้าจะอ่านเฉพาะ Google Sheets ที่เลือก '
+            'ไม่มีการแนบหรืออัปโหลดไฟล์ส่วนตัวเข้าสู่ GitHub',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    ),
+  );
+
+  String _sourceDetails(BuildContext context, DriveRosterSource source) {
     final locale = Localizations.localeOf(context).toLanguageTag();
 
     final rosterMonth = formatLocalizedDate(
@@ -168,65 +156,62 @@ class GoogleSheetImportPage extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({
-    required this.controller,
-  });
+  const _Header({required this.controller});
 
   final DriveRosterSourceController controller;
 
   @override
   Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 12,
-            runSpacing: 12,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.l10n.googleDrive,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(context.l10n.googleDriveDescription),
-                ],
+              Text(
+                context.l10n.googleDrive,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              if (controller.auth.signedIn)
-                Wrap(
-                  spacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(controller.auth.account?.email ?? ''),
-                    OutlinedButton.icon(
-                      onPressed: controller.auth.signOut,
-                      icon: const Icon(Icons.logout),
-                      label: Text(context.l10n.signOutGoogle),
-                    ),
-                    FilledButton.icon(
-                      onPressed:
-                          controller.loading ? null : controller.refresh,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(context.l10n.openGoogleDrive),
-                    ),
-                  ],
-                )
-              else if (controller.auth.pluginReady)
-                GoogleLoginButton(
-                  enabled: !controller.loading,
-                  onPressed: controller.auth.signIn,
-                )
-              else
-                OutlinedButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.key_off_outlined),
-                  label: Text(context.l10n.signInWithGoogle),
-                ),
+              const SizedBox(height: 4),
+              Text(context.l10n.googleDriveDescription),
             ],
           ),
-        ),
-      );
+          if (controller.auth.signedIn)
+            Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(controller.auth.account?.email ?? ''),
+                OutlinedButton.icon(
+                  onPressed: controller.auth.signOut,
+                  icon: const Icon(Icons.logout),
+                  label: Text(context.l10n.signOutGoogle),
+                ),
+                FilledButton.icon(
+                  onPressed: controller.loading ? null : controller.refresh,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(context.l10n.openGoogleDrive),
+                ),
+              ],
+            )
+          else if (controller.auth.pluginReady)
+            GoogleLoginButton(
+              enabled: !controller.loading,
+              onPressed: controller.auth.signIn,
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: null,
+              icon: const Icon(Icons.key_off_outlined),
+              label: Text(context.l10n.signInWithGoogle),
+            ),
+        ],
+      ),
+    ),
+  );
 }
