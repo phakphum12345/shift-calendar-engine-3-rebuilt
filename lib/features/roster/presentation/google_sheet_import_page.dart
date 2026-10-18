@@ -76,17 +76,30 @@ class GoogleSheetImportPage extends StatelessWidget {
           if (controller.recentSources.isEmpty)
             Text(context.l10n.noDriveRosterFiles)
           else
-            for (final source in controller.recentSources)
-              RadioListTile<String>(
-                value: source.id,
-                groupValue: controller.selectedSource?.id,
-                onChanged: controller.loading
-                    ? null
-                    : (_) => controller.select(source),
-                title: Text(source.name),
-                subtitle: Text(_sourceDetails(context, source)),
-                secondary: const Icon(Icons.table_chart_outlined),
+            RadioGroup<String>(
+              groupValue: controller.selectedSource?.id,
+              onChanged: (value) {
+                if (controller.loading || value == null) return;
+
+                for (final source in controller.recentSources) {
+                  if (source.id == value) {
+                    controller.select(source);
+                    break;
+                  }
+                }
+              },
+              child: Column(
+                children: [
+                  for (final source in controller.recentSources)
+                    RadioListTile<String>(
+                      value: source.id,
+                      title: Text(source.name),
+                      subtitle: Text(_sourceDetails(context, source)),
+                      secondary: const Icon(Icons.table_chart_outlined),
+                    ),
+                ],
               ),
+            ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: controller.selectedSource == null || controller.loading
@@ -97,7 +110,8 @@ class GoogleSheetImportPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'นำเข้าเฉพาะ Google Sheets ที่เลือกเท่านั้น ไม่แนบหรืออัปโหลดไฟล์ส่วนตัวเข้า GitHub',
+            'การนำเข้าจะอ่านเฉพาะ Google Sheets ที่เลือก '
+            'ไม่มีการแนบหรืออัปโหลดไฟล์ส่วนตัวเข้าสู่ GitHub',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall,
           ),
@@ -108,22 +122,27 @@ class GoogleSheetImportPage extends StatelessWidget {
 
   String _sourceDetails(BuildContext context, DriveRosterSource source) {
     final locale = Localizations.localeOf(context).toLanguageTag();
+
     final rosterMonth = formatLocalizedDate(
       DateFormat.yMMMM(locale),
       source.rosterMonth,
       locale: locale,
     );
+
     final modifiedTime = formatLocalizedDate(
       DateFormat.yMMMd(locale).add_Hm(),
       source.modifiedTime,
       locale: locale,
     );
+
     return '$rosterMonth • $modifiedTime';
   }
 
   Future<void> _importSelected(BuildContext context) async {
     final loaded = await controller.loadCurrentSource();
+
     if (!context.mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
