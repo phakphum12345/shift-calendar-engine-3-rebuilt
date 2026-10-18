@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package/material.dart';
+import 'package/intl.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../../l10n/localized_date_format.dart';
@@ -15,7 +15,7 @@ import 'google_login_button.dart';
 class GoogleSheetImportPage extends StatelessWidget {
   const GoogleSheetImportPage({required this.controller, super.key});
 
-  final DriveRosterSourceController controller;
+final DriveRosterSourceController controller;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -106,93 +106,93 @@ class GoogleSheetImportPage extends StatelessWidget {
     ),
   );
 
-  String _sourceDetails(BuildContext context, DriveRosterSource source) {
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    final rosterMonth = formatLocalizedDate(
-      DateFormat.yMMMM(locale),
-      source.rosterMonth,
-      locale: locale,
-    );
-    final modifiedTime = formatLocalizedDate(
-      DateFormat.yMMMd(locale).add_Hm(),
-      source.modifiedTime,
-      locale: locale,
-    );
-    return '$rosterMonth • $modifiedTime';
-  }
+String _sourceDetails(BuildContext context, DriveRosterSource source) {
+final locale = Localizations.localeOf(context).toLanguageTag();
+final rosterMonth = formatLocalizedDate(
+DateFormat.yMMMM(locale),
+source.rosterMonth,
+locale: locale,
+);
+final modifiedTime = formatLocalizedDate(
+DateFormat.yMMMd(locale).add_Hm(),
+source.modifiedTime,
+locale: locale,
+);
+return '$rosterMonth • $modifiedTime';
+}
 
-  Future<void> _importSelected(BuildContext context) async {
-    final loaded = await controller.loadCurrentSource();
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          loaded
-              ? context.l10n.driveSourceLoaded
-              : context.l10n.googleDriveLoadFailed,
-        ),
-      ),
-    );
-  }
+Future<void> _importSelected(BuildContext context) async {
+final loaded = await controller.loadCurrentSource();
+if (!context.mounted) return;
+ScaffoldMessenger.of(context).showSnackBar(
+SnackBar(
+content: Text(
+loaded
+? context.l10n.driveSourceLoaded
+: context.l10n.googleDriveLoadFailed,
+),
+),
+);
+}
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.controller});
+const _Header({required this.controller});
 
-  final DriveRosterSourceController controller;
+final DriveRosterSourceController controller;
 
-  @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.googleDrive,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(context.l10n.googleDriveDescription),
-            ],
-          ),
-          if (controller.auth.signedIn)
-            Wrap(
-              spacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(controller.auth.account?.email ?? ''),
-                OutlinedButton.icon(
-                  onPressed: controller.auth.signOut,
-                  icon: const Icon(Icons.logout),
-                  label: Text(context.l10n.signOutGoogle),
-                ),
-                FilledButton.icon(
-                  onPressed: controller.loading ? null : controller.refresh,
-                  icon: const Icon(Icons.refresh),
-                  label: Text(context.l10n.openGoogleDrive),
-                ),
-              ],
-            )
-          else if (controller.auth.pluginReady)
-            GoogleLoginButton(
-              enabled: !controller.loading,
-              onPressed: controller.auth.signIn,
-            )
-          else
-            OutlinedButton.icon(
-              onPressed: null,
-              icon: const Icon(Icons.key_off_outlined),
-              label: Text(context.l10n.signInWithGoogle),
-            ),
-        ],
-      ),
-    ),
-  );
+@override
+Widget build(BuildContext context) => Card(
+child: Padding(
+padding: const EdgeInsets.all(16),
+child: Wrap(
+alignment: WrapAlignment.spaceBetween,
+crossAxisAlignment: WrapCrossAlignment.center,
+spacing: 12,
+runSpacing: 12,
+children: [
+Column(
+crossAxisAlignment: CrossAxisAlignment.start,
+children: [
+Text(
+context.l10n.googleDrive,
+style: Theme.of(context).textTheme.titleLarge,
+),
+const SizedBox(height: 4),
+Text(context.l10n.googleDriveDescription),
+],
+),
+if (controller.auth.signedIn)
+Wrap(
+spacing: 8,
+crossAxisAlignment: WrapCrossAlignment.center,
+children: [
+Text(controller.auth.account?.email ?? ''),
+OutlinedButton.icon(
+onPressed: controller.auth.signOut,
+icon: const Icon(Icons.logout),
+label: Text(context.l10n.signOutGoogle),
+),
+FilledButton.icon(
+onPressed: controller.loading ? null : controller.refresh,
+icon: const Icon(Icons.refresh),
+label: Text(context.l10n.openGoogleDrive),
+),
+],
+)
+else if (controller.auth.pluginReady)
+GoogleLoginButton(
+enabled: !controller.loading,
+onPressed: controller.auth.signIn,
+)
+else
+OutlinedButton.icon(
+onPressed: null,
+icon: const Icon(Icons.key_off_outlined),
+label: Text(context.l10n.signInWithGoogle),
+),
+],
+),
+),
+);
 }
