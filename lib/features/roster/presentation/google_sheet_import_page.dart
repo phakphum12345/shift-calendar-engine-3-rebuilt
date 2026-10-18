@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -85,18 +84,16 @@ class GoogleSheetImportPage extends StatelessWidget {
               else
                 RadioGroup<String>(
                   groupValue: controller.selectedSource?.id,
-                  onChanged: controller.loading
-                      ? null
-                      : (value) {
-                          if (value == null) return;
+                  onChanged: (value) {
+                    if (controller.loading || value == null) return;
 
-                          for (final source in controller.recentSources) {
-                            if (source.id == value) {
-                              controller.select(source);
-                              break;
-                            }
-                          }
-                        },
+                    for (final source in controller.recentSources) {
+                      if (source.id == value) {
+                        controller.select(source);
+                        break;
+                      }
+                    }
+                  },
                   child: Column(
                     children: [
                       for (final source in controller.recentSources)
