@@ -78,7 +78,7 @@ class GoogleSheetImportPage extends StatelessWidget {
           else
             RadioGroup<String>(
               groupValue: controller.selectedSource?.id,
-              onChanged: (value) {
+              onChanged: (String? value) {
                 if (controller.loading || value == null) return;
 
                 for (final source in controller.recentSources) {
